@@ -18,8 +18,11 @@
 
 namespace vizkit3d_normal_depth_map {
 
-#define SHADER_PATH_FRAG "vizkit3d_normal_depth_map/shaders/normalDepthMap.frag"
-#define SHADER_PATH_VERT "vizkit3d_normal_depth_map/shaders/normalDepthMap.vert"
+std::string autoproj_root = getenv("AUTOPROJ_CURRENT_ROOT");
+
+#define SHADER_PATH_FRAG autoproj_root + "/gui/vizkit3d_normal_depth_map/resources/shaders/normalDepthMap.frag"
+#define SHADER_PATH_VERT autoproj_root + "/gui//vizkit3d_normal_depth_map/resources/shaders/normalDepthMap.vert"
+
 
 NormalDepthMap::NormalDepthMap(float maxRange, float maxHorizontalAngle, float maxVerticalAngle) {
     _normalDepthMapNode = createTheNormalDepthMapShaderNode(maxRange, maxHorizontalAngle, maxVerticalAngle);
