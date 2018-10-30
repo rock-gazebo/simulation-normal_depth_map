@@ -9,6 +9,7 @@ uniform bool drawNormal;
 uniform bool drawDepth;
 uniform sampler2D normalTexture;
 uniform float reflectance;
+uniform float attenuationCoeff;
 
 out vec4 out_data;
 
@@ -19,8 +20,9 @@ void main() {
 
     // Normal for textured scenes (by normal mapping)
     if (textureSize(normalTexture, 0).x > 1) {
-        vec3 modifiedNormal = (texture2D(normalTexture, gl_TexCoord[0].st).rgb * 2.0 - 1.0) * TBN;
-        normNormal = normalize(modifiedNormal);
+        vec3 normalRGB = texture2D(normalTexture, gl_TexCoord[0].xy).rgb;
+        vec3 normalMap = (normalRGB * 2.0 - 1.0) * TBN;
+        normNormal = normalize(normalMap);
     }
 
     // Normal for untextured scenes
@@ -34,6 +36,10 @@ void main() {
     vec3 normPosition = normalize(-pos);
 
     float linearDepth = sqrt(pos.z * pos.z + pos.x * pos.x + pos.y * pos.y);
+
+    // Attenuation effect of sound in the water
+    normNormal = normNormal * exp(-2 * attenuationCoeff * linearDepth);
+
     linearDepth = linearDepth / farPlane;
 
     if (!(linearDepth > 1)) {

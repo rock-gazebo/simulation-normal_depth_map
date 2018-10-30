@@ -1,19 +1,10 @@
-/*
- * ImageCaptureTool.cpp
- *
- *  Created on: Apr 7, 2015
- *      Author: tiagotrocoli
- */
-
 #include "ImageViewerCaptureTool.hpp"
 #include <iostream>
 #include <unistd.h>
-#include <osgDB/WriteFile>
 
-namespace vizkit3d_normal_depth_map {
+namespace normal_depth_map {
 
 ImageViewerCaptureTool::ImageViewerCaptureTool(uint width, uint height) {
-
     // initialize the hide viewer;
     initializeProperties(width, height);
 }
@@ -33,44 +24,45 @@ ImageViewerCaptureTool::ImageViewerCaptureTool( double fovY, double fovX,
     double aspectRatio = width * 1.0 / height;
 
     initializeProperties(width, height);
-    _viewer->getCamera()->setComputeNearFarMode(
-      osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR);
-
-    _viewer->getCamera()->setProjectionMatrixAsPerspective(
-      fovY * 180.0 / M_PI, aspectRatio, 0.1, 1000);
+    _viewer->getCamera()->setComputeNearFarMode(osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR);
+    _viewer->getCamera()->setProjectionMatrixAsPerspective(fovY * 180.0 / M_PI, aspectRatio, 0.1, 1000);
 }
 
 void ImageViewerCaptureTool::initializeProperties(uint width, uint height) {
-    // initialize the hide viewer;
     _viewer = new osgViewer::Viewer;
-    osg::Camera *camera = this->_viewer->getCamera();
-    osg::ref_ptr<osg::GraphicsContext::Traits> traits =
-      new osg::GraphicsContext::Traits;
+
+    osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits;
     traits->width = width;
     traits->height = height;
     traits->pbuffer = true;
     traits->readDISPLAY();
-    osg::ref_ptr<osg::GraphicsContext> gc =
-      osg::GraphicsContext::createGraphicsContext(traits.get());
-    camera->setGraphicsContext(gc);
+
+    osg::ref_ptr<osg::Camera> camera = this->_viewer->getCamera();
+    osg::ref_ptr<osg::GraphicsContext> gfxc = osg::GraphicsContext::createGraphicsContext(traits.get());
+    camera->setGraphicsContext(gfxc);
     camera->setDrawBuffer(GL_FRONT);
     camera->setViewport(new osg::Viewport(0, 0, width, height));
 
     // initialize the class to get the image in float data resolution
-    _capture = new WindowCaptureScreen(gc);
-    _viewer->getCamera()->setFinalDrawCallback(_capture);
+    _capture = new WindowCaptureScreen(gfxc);
+    camera->setFinalDrawCallback(_capture);
 }
 
-osg::ref_ptr<osg::Image> ImageViewerCaptureTool::grabImage(
-                                      osg::ref_ptr<osg::Node> node ) {
-
+osg::ref_ptr<osg::Image> ImageViewerCaptureTool::grabImage(osg::ref_ptr<osg::Node> node) {
+    // set the current root node
     _viewer->setSceneData(node);
+
+    // if the view matrix is invalid (NaN), use the identity
+    osg::ref_ptr<osg::Camera> camera = _viewer->getCamera();
+    if (camera->getViewMatrix().isNaN())
+        camera->setViewMatrix(osg::Matrix::identity());
+
+    // grab the current frame
     _viewer->frame();
-    return _capture->captureImage();;
+    return _capture->captureImage();
 }
 
 osg::ref_ptr<osg::Image> ImageViewerCaptureTool::getDepthBuffer() {
-
     return _capture->getDepthBuffer();
 }
 
@@ -98,7 +90,6 @@ void ImageViewerCaptureTool::setBackgroundColor(osg::Vec4d color) {
 ////////////////////////////////
 
 WindowCaptureScreen::WindowCaptureScreen(osg::ref_ptr<osg::GraphicsContext> gc) {
-
     _mutex = new OpenThreads::Mutex();
     _condition = new OpenThreads::Condition();
     _image = new osg::Image();
@@ -106,7 +97,6 @@ WindowCaptureScreen::WindowCaptureScreen(osg::ref_ptr<osg::GraphicsContext> gc) 
 
     // checks the GraficContext from the camera viewer
     if (gc->getTraits()) {
-
         GLenum pixelFormat;
         if (gc->getTraits()->alpha)
             pixelFormat = GL_RGBA;
@@ -128,29 +118,24 @@ WindowCaptureScreen::~WindowCaptureScreen() {
 }
 
 osg::ref_ptr<osg::Image> WindowCaptureScreen::captureImage() {
-
     //wait to finish the capture image in call back
     _condition->wait(_mutex);
     return _image;
 }
 
 osg::ref_ptr<osg::Image> WindowCaptureScreen::getDepthBuffer() {
-
     return _depth_buffer;
 }
 
 
 void WindowCaptureScreen::operator ()(osg::RenderInfo& renderInfo) const {
-    osg::ref_ptr<osg::GraphicsContext> gc =
-      renderInfo.getState()->getGraphicsContext();
+    osg::ref_ptr<osg::GraphicsContext> gc = renderInfo.getState()->getGraphicsContext();
     if (gc->getTraits()) {
         _mutex->lock();
-        _image->readPixels( 0, 0, _image->s(), _image->t(),
-                            _image->getPixelFormat(), GL_FLOAT);
-        _depth_buffer->readPixels(0, 0, _image->s(), _image->t(),
-                                  _depth_buffer->getPixelFormat(), GL_FLOAT);
+        _image->readPixels( 0, 0, _image->s(), _image->t(), _image->getPixelFormat(), GL_FLOAT);
+        _depth_buffer->readPixels(0, 0, _image->s(), _image->t(), _depth_buffer->getPixelFormat(), GL_FLOAT);
 
-      //grants the access to image
+        //grants the access to image
         _condition->signal();
         _mutex->unlock();
     }
