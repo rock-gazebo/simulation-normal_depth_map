@@ -108,7 +108,7 @@ protected:
      * @param height: texture rows (in pixels).
      * @return the FBO texture.
      */
-    osg::Texture2D* createFloatTexture( uint width, uint height );
+    osg::ref_ptr<osg::Texture2D> createFloatTexture( uint width, uint height );
 
     /**
      * Setup a camera with an attached RTT texture.
@@ -119,7 +119,7 @@ protected:
      * @param gfxc: the graphics context.
      * @return the osg camera.
      */
-    osg::Camera* createRTTCamera(   osg::Camera* cam,
+    void setupRTTCamera(osg::Camera* camera,
                                     osg::Camera::BufferComponent buffer,
                                     osg::Texture2D* tex,
                                     osg::GraphicsContext *gfxc );

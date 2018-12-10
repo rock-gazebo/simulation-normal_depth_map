@@ -26,9 +26,9 @@ ImageViewerCaptureTool::ImageViewerCaptureTool( double fovY, double fovX,
 }
 
 // create a RTT (render to texture) camera
-osg::Camera *ImageViewerCaptureTool::createRTTCamera(osg::Camera* cam, osg::Camera::BufferComponent buffer, osg::Texture2D *tex, osg::GraphicsContext *gfxc)
+void ImageViewerCaptureTool::setupRTTCamera(osg::Camera* camera, 
+    osg::Camera::BufferComponent buffer, osg::Texture2D *tex, osg::GraphicsContext *gfxc)
 {
-    osg::ref_ptr<osg::Camera> camera = cam;
     camera->setClearColor(osg::Vec4(0, 0, 0, 1));
     camera->setClearMask(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     camera->setRenderTargetImplementation(osg::Camera::FRAME_BUFFER_OBJECT);
@@ -38,11 +38,10 @@ osg::Camera *ImageViewerCaptureTool::createRTTCamera(osg::Camera* cam, osg::Came
     camera->setDrawBuffer(GL_FRONT);
     camera->setComputeNearFarMode(osg::CullSettings::DO_NOT_COMPUTE_NEAR_FAR);
     camera->attach(buffer, tex);
-    return camera.release();
 }
 
 // create float textures to be rendered in FBO
-osg::Texture2D* ImageViewerCaptureTool::createFloatTexture(uint width, uint height)
+osg::ref_ptr<osg::Texture2D> ImageViewerCaptureTool::createFloatTexture(uint width, uint height)
 {
     osg::ref_ptr<osg::Texture2D> tex2D = new osg::Texture2D;
     tex2D->setTextureSize( width, height );
@@ -52,7 +51,7 @@ osg::Texture2D* ImageViewerCaptureTool::createFloatTexture(uint width, uint heig
     tex2D->setResizeNonPowerOfTwoHint( false );
     tex2D->setFilter( osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR );
     tex2D->setFilter( osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR );
-    return tex2D.release();
+    return tex2D;
 }
 
 void ImageViewerCaptureTool::setupViewer(uint width, uint height, double fovY)
@@ -66,19 +65,22 @@ void ImageViewerCaptureTool::setupViewer(uint width, uint height, double fovY)
     traits->pbuffer = true;
     traits->doubleBuffer = true;
     traits->readDISPLAY();
-    osg::ref_ptr<osg::GraphicsContext> gfxc = osg::GraphicsContext::createGraphicsContext(traits.get());
+    osg::ref_ptr<osg::GraphicsContext> gfxc = 
+        osg::GraphicsContext::createGraphicsContext(traits.get());
 
     if(gfxc.valid())
     {
         // set the main camera
         _viewer = new osgViewer::Viewer;
         osg::ref_ptr<osg::Texture2D> tex = createFloatTexture(width, height);
-        osg::ref_ptr<osg::Camera> cam = createRTTCamera(_viewer->getCamera(), osg::Camera::COLOR_BUFFER0, tex, gfxc);
-        cam->setProjectionMatrixAsPerspective(osg::RadiansToDegrees(fovY), (width * 1.0 / height), 0.1, 1000);
+        setupRTTCamera(_viewer->getCamera(), 
+            osg::Camera::COLOR_BUFFER0, tex, gfxc);
+        _viewer->getCamera()->setProjectionMatrixAsPerspective(osg::RadiansToDegrees(fovY), 
+            (width * 1.0 / height), 0.1, 1000);
 
         // render texture to image
         _capture = new WindowCaptureScreen(gfxc, tex);
-        cam->setFinalDrawCallback(_capture);
+        _viewer->getCamera()->setFinalDrawCallback(_capture);
     }
     else
         throw std::runtime_error("Graphics Context was not created properly");
