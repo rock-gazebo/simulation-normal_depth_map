@@ -27,7 +27,7 @@ public:
      *
      * @return the osg image from the scene with defined camera and view parameters.
      */
-	osg::ref_ptr<osg::Image> captureImage();
+	osg::ref_ptr<osg::Image> captureImage(osgViewer::Viewer& viewer);
 
 private:
 

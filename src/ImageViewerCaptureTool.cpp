@@ -96,8 +96,7 @@ osg::ref_ptr<osg::Image> ImageViewerCaptureTool::grabImage(osg::ref_ptr<osg::Nod
         _viewer->getCamera()->setViewMatrix(osg::Matrixd::identity());
 
     // grab the current frame
-    _viewer->frame();
-    return _capture->captureImage();
+    return _capture->captureImage(*_viewer);
 }
 
 ////////////////////////////////
@@ -123,9 +122,12 @@ WindowCaptureScreen::~WindowCaptureScreen() {
     delete (_mutex);
 }
 
-osg::ref_ptr<osg::Image> WindowCaptureScreen::captureImage() {
+osg::ref_ptr<osg::Image> WindowCaptureScreen::captureImage(osgViewer::Viewer& viewer) {
     //wait to finish the capture image in callback
+    _mutex->lock();
+    viewer.frame();
     _condition->wait(_mutex);
+    _mutex->unlock();
     return _image;
 }
 
