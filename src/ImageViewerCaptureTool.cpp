@@ -26,7 +26,7 @@ ImageViewerCaptureTool::ImageViewerCaptureTool( double fovY, double fovX,
 }
 
 // create a RTT (render to texture) camera
-void ImageViewerCaptureTool::setupRTTCamera(osg::Camera* camera, 
+void ImageViewerCaptureTool::setupRTTCamera(osg::Camera* camera,
     osg::Camera::BufferComponent buffer, osg::Texture2D *tex, osg::GraphicsContext *gfxc)
 {
     camera->setClearColor(osg::Vec4(0, 0, 0, 1));
@@ -65,7 +65,7 @@ void ImageViewerCaptureTool::setupViewer(uint width, uint height, double fovY)
     traits->pbuffer = true;
     traits->doubleBuffer = true;
     traits->readDISPLAY();
-    osg::ref_ptr<osg::GraphicsContext> gfxc = 
+    osg::ref_ptr<osg::GraphicsContext> gfxc =
         osg::GraphicsContext::createGraphicsContext(traits.get());
 
     if(gfxc.valid())
@@ -73,9 +73,9 @@ void ImageViewerCaptureTool::setupViewer(uint width, uint height, double fovY)
         // set the main camera
         _viewer = new osgViewer::Viewer;
         osg::ref_ptr<osg::Texture2D> tex = createFloatTexture(width, height);
-        setupRTTCamera(_viewer->getCamera(), 
+        setupRTTCamera(_viewer->getCamera(),
             osg::Camera::COLOR_BUFFER0, tex, gfxc);
-        _viewer->getCamera()->setProjectionMatrixAsPerspective(osg::RadiansToDegrees(fovY), 
+        _viewer->getCamera()->setProjectionMatrixAsPerspective(osg::RadiansToDegrees(fovY),
             (width * 1.0 / height), 0.1, 1000);
 
         // render texture to image
