@@ -22,11 +22,13 @@ namespace normal_depth_map {
 #define SHADER_PATH_VERT "normal_depth_map/shaders/normalDepthMap.vert"
 
 NormalDepthMap::NormalDepthMap(float maxRange, float maxHorizontalAngle, float maxVerticalAngle) {
-    _normalDepthMapNode = createTheNormalDepthMapShaderNode(maxRange, maxHorizontalAngle, maxVerticalAngle);
+    _normalDepthMapNode = createTheNormalDepthMapShaderNode(
+        maxRange, maxHorizontalAngle, maxVerticalAngle);
 }
 
 NormalDepthMap::NormalDepthMap(float maxRange, float maxHorizontalAngle, float maxVerticalAngle, float attenuationCoeff) {
-    _normalDepthMapNode = createTheNormalDepthMapShaderNode(maxRange, maxHorizontalAngle, maxVerticalAngle, attenuationCoeff);
+    _normalDepthMapNode = createTheNormalDepthMapShaderNode(
+        maxRange, maxHorizontalAngle, maxVerticalAngle, attenuationCoeff);
 }
 
 NormalDepthMap::NormalDepthMap() {
@@ -93,8 +95,36 @@ bool NormalDepthMap::isDrawDepth() {
     return drawDepth;
 }
 
+void NormalDepthMap::setViewMatrix(osg::Matrixf m) {
+    _normalDepthMapNode->getOrCreateStateSet()->getUniform("viewMatrix")->set(m);
+}
+
+osg::Matrixf NormalDepthMap::getViewMatrix() {
+    osg::Matrixf m;
+    _normalDepthMapNode->getOrCreateStateSet()->getUniform("viewMatrix")->get(m);
+    return m;
+}
+
+void NormalDepthMap::setProjectionMatrix(osg::Matrixf m) {
+    _normalDepthMapNode->getOrCreateStateSet()->getUniform("projectionMatrix")->set(m);
+}
+
+osg::Matrixf NormalDepthMap::getProjectionMatrix() {
+    osg::Matrixf m;
+    _normalDepthMapNode->getOrCreateStateSet()->getUniform("projectionMatrix")->get(m);
+    return m;
+}
+
 void NormalDepthMap::addNodeChild(osg::ref_ptr<osg::Node> node) {
     _normalDepthMapNode->addChild(node);
+}
+
+void NormalDepthMap::setFOV(double h, double v)
+{
+    double aspect_ratio = tan(h * 0.5) / tan(v * 0.5);
+    setProjectionMatrix(osg::Matrixf::perspective(
+        osg::RadiansToDegrees(v),
+        aspect_ratio, 0.1, 1000));
 }
 
 osg::ref_ptr<osg::Group> NormalDepthMap::createTheNormalDepthMapShaderNode(
@@ -132,6 +162,18 @@ osg::ref_ptr<osg::Group> NormalDepthMap::createTheNormalDepthMapShaderNode(
     ss->addUniform(drawNormalUniform);
     osg::ref_ptr<osg::Uniform> drawDepthUniform(new osg::Uniform("drawDepth", drawDepth));
     ss->addUniform(drawDepthUniform);
+
+    osg::Matrixf viewMatrix(osg::Matrixf::identity());
+    osg::ref_ptr<osg::Uniform> viewMatrixUniform(new osg::Uniform("viewMatrix", viewMatrix));
+    ss->addUniform(viewMatrixUniform);
+
+    double aspect_ratio = tan(maxHorizontalAngle * 0.5) / tan(maxVerticalAngle * 0.5);
+    auto projectionMatrix = osg::Matrixf::perspective(
+        osg::RadiansToDegrees(maxVerticalAngle),
+        aspect_ratio, 0.1, 1000);
+
+    osg::ref_ptr<osg::Uniform> projectionMatrixUniform(new osg::Uniform("projectionMatrix", projectionMatrix));
+    ss->addUniform(projectionMatrixUniform);
 
     return localRoot;
 }

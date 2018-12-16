@@ -10,8 +10,8 @@ ImageViewerCaptureTool::ImageViewerCaptureTool(uint width, uint height)
     setupViewer(width, height);
 }
 
-ImageViewerCaptureTool::ImageViewerCaptureTool( double fovY, double fovX,
-                                                uint value, bool isHeight) {
+ImageViewerCaptureTool::ImageViewerCaptureTool(
+    double fovY, double fovX, uint value, bool isHeight) {
     uint width, height;
 
     if (isHeight) {
@@ -75,9 +75,8 @@ void ImageViewerCaptureTool::setupViewer(uint width, uint height, double fovY)
         osg::ref_ptr<osg::Texture2D> tex = createFloatTexture(width, height);
         setupRTTCamera(_viewer->getCamera(),
             osg::Camera::COLOR_BUFFER0, tex, gfxc);
-        _viewer->getCamera()->setProjectionMatrixAsPerspective(osg::RadiansToDegrees(fovY),
-            (width * 1.0 / height), 0.1, 1000);
-
+        _viewer->getCamera()->setViewMatrix(osg::Matrixf::identity());
+        _viewer->getCamera()->setProjectionMatrix(osg::Matrixf::identity());
         // render texture to image
         _capture = new WindowCaptureScreen(gfxc, tex);
         _viewer->getCamera()->setFinalDrawCallback(_capture);
@@ -90,10 +89,6 @@ osg::ref_ptr<osg::Image> ImageViewerCaptureTool::grabImage(osg::ref_ptr<osg::Nod
 {
     // set the current node
     _viewer->setSceneData(node);
-
-    // if the view matrix is invalid (NaN), use the identity
-    if (_viewer->getCamera()->getViewMatrix().isNaN())
-        _viewer->getCamera()->setViewMatrix(osg::Matrixd::identity());
 
     // grab the current frame
     return _capture->captureImage(*_viewer);
