@@ -79,6 +79,10 @@ public:
      */
     osg::ref_ptr<osg::Image> grabImage(osg::ref_ptr<osg::Node> node);
 
+    void setCameraViewMatrix(osg::Matrixd const& m) {
+        _viewer->getCamera()->setViewMatrix(m);
+    }
+
     void setCameraPosition(const osg::Vec3d &eye, const osg::Vec3d &center, const osg::Vec3d &up) {
         _viewer->getCamera()->setViewMatrixAsLookAt(eye, center, up);
     }
