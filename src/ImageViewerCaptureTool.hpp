@@ -27,7 +27,7 @@ public:
      *
      * @return the osg image from the scene with defined camera and view parameters.
      */
-	osg::ref_ptr<osg::Image> captureImage();
+	osg::ref_ptr<osg::Image> captureImage(osgViewer::Viewer& viewer);
 
 private:
 
@@ -78,14 +78,6 @@ public:
      * @return the rendered image from main node.
      */
     osg::ref_ptr<osg::Image> grabImage(osg::ref_ptr<osg::Node> node);
-
-    void setCameraPosition(const osg::Vec3d &eye, const osg::Vec3d &center, const osg::Vec3d &up) {
-        _viewer->getCamera()->setViewMatrixAsLookAt(eye, center, up);
-    }
-
-    void getCameraPosition(osg::Vec3d &eye, osg::Vec3d &center, osg::Vec3d &up) {
-        _viewer->getCamera()->getViewMatrixAsLookAt(eye, center, up);
-    }
 
     void setBackgroundColor(osg::Vec4d color) {
         _viewer->getCamera()->setClearColor(color);

@@ -84,6 +84,27 @@ public:
     void setDrawDepth(bool drawDepth);
     bool isDrawDepth();
 
+    void setViewMatrix(osg::Matrixf m);
+    osg::Matrixf getViewMatrix();
+
+    void setProjectionMatrix(osg::Matrixf m);
+    osg::Matrixf getProjectionMatrix();
+
+    /** Set the horizontal and vertical fields of view, in radians
+     */
+    void setFOV(double horizontal, double vertical);
+
+    /** Returns the projection matrix that matches a given field of view */
+    static osg::Matrixf getProjectionMatrixFromFOV(double horizontal, double vertical);
+
+    void setViewMatrix(const osg::Vec3d &eye, const osg::Vec3d &center, const osg::Vec3d &up) {
+        setViewMatrix(osg::Matrixf::lookAt(eye, center, up));
+    }
+
+    void getViewMatrix(osg::Vec3d &eye, osg::Vec3d &center, osg::Vec3d &up) {
+        getViewMatrix().getLookAt(eye, center, up);
+    }
+
 private:
 
     osg::ref_ptr<osg::Group> createTheNormalDepthMapShaderNode(

@@ -10,8 +10,8 @@ ImageViewerCaptureTool::ImageViewerCaptureTool(uint width, uint height)
     setupViewer(width, height);
 }
 
-ImageViewerCaptureTool::ImageViewerCaptureTool( double fovY, double fovX,
-                                                uint value, bool isHeight) {
+ImageViewerCaptureTool::ImageViewerCaptureTool(
+    double fovY, double fovX, uint value, bool isHeight) {
     uint width, height;
 
     if (isHeight) {
@@ -26,7 +26,7 @@ ImageViewerCaptureTool::ImageViewerCaptureTool( double fovY, double fovX,
 }
 
 // create a RTT (render to texture) camera
-void ImageViewerCaptureTool::setupRTTCamera(osg::Camera* camera, 
+void ImageViewerCaptureTool::setupRTTCamera(osg::Camera* camera,
     osg::Camera::BufferComponent buffer, osg::Texture2D *tex, osg::GraphicsContext *gfxc)
 {
     camera->setClearColor(osg::Vec4(0, 0, 0, 1));
@@ -65,7 +65,7 @@ void ImageViewerCaptureTool::setupViewer(uint width, uint height, double fovY)
     traits->pbuffer = true;
     traits->doubleBuffer = true;
     traits->readDISPLAY();
-    osg::ref_ptr<osg::GraphicsContext> gfxc = 
+    osg::ref_ptr<osg::GraphicsContext> gfxc =
         osg::GraphicsContext::createGraphicsContext(traits.get());
 
     if(gfxc.valid())
@@ -73,11 +73,10 @@ void ImageViewerCaptureTool::setupViewer(uint width, uint height, double fovY)
         // set the main camera
         _viewer = new osgViewer::Viewer;
         osg::ref_ptr<osg::Texture2D> tex = createFloatTexture(width, height);
-        setupRTTCamera(_viewer->getCamera(), 
+        setupRTTCamera(_viewer->getCamera(),
             osg::Camera::COLOR_BUFFER0, tex, gfxc);
-        _viewer->getCamera()->setProjectionMatrixAsPerspective(osg::RadiansToDegrees(fovY), 
-            (width * 1.0 / height), 0.1, 1000);
-
+        _viewer->getCamera()->setViewMatrix(osg::Matrixf::identity());
+        _viewer->getCamera()->setProjectionMatrix(osg::Matrixf::identity());
         // render texture to image
         _capture = new WindowCaptureScreen(gfxc, tex);
         _viewer->getCamera()->setFinalDrawCallback(_capture);
@@ -91,13 +90,8 @@ osg::ref_ptr<osg::Image> ImageViewerCaptureTool::grabImage(osg::ref_ptr<osg::Nod
     // set the current node
     _viewer->setSceneData(node);
 
-    // if the view matrix is invalid (NaN), use the identity
-    if (_viewer->getCamera()->getViewMatrix().isNaN())
-        _viewer->getCamera()->setViewMatrix(osg::Matrixd::identity());
-
     // grab the current frame
-    _viewer->frame();
-    return _capture->captureImage();
+    return _capture->captureImage(*_viewer);
 }
 
 ////////////////////////////////
@@ -123,9 +117,12 @@ WindowCaptureScreen::~WindowCaptureScreen() {
     delete (_mutex);
 }
 
-osg::ref_ptr<osg::Image> WindowCaptureScreen::captureImage() {
+osg::ref_ptr<osg::Image> WindowCaptureScreen::captureImage(osgViewer::Viewer& viewer) {
     //wait to finish the capture image in callback
+    _mutex->lock();
+    viewer.frame();
     _condition->wait(_mutex);
+    _mutex->unlock();
     return _image;
 }
 
