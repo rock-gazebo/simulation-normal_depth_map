@@ -121,10 +121,15 @@ void NormalDepthMap::addNodeChild(osg::ref_ptr<osg::Node> node) {
 
 void NormalDepthMap::setFOV(double h, double v)
 {
+    setProjectionMatrix(getProjectionMatrixFromFOV(h, v));
+}
+
+osg::Matrixf NormalDepthMap::getProjectionMatrixFromFOV(double h, double v)
+{
     double aspect_ratio = tan(h * 0.5) / tan(v * 0.5);
-    setProjectionMatrix(osg::Matrixf::perspective(
+    return osg::Matrixf::perspective(
         osg::RadiansToDegrees(v),
-        aspect_ratio, 0.1, 1000));
+        aspect_ratio, 0.1, 1000);
 }
 
 osg::ref_ptr<osg::Group> NormalDepthMap::createTheNormalDepthMapShaderNode(
@@ -167,12 +172,8 @@ osg::ref_ptr<osg::Group> NormalDepthMap::createTheNormalDepthMapShaderNode(
     osg::ref_ptr<osg::Uniform> viewMatrixUniform(new osg::Uniform("viewMatrix", viewMatrix));
     ss->addUniform(viewMatrixUniform);
 
-    double aspect_ratio = tan(maxHorizontalAngle * 0.5) / tan(maxVerticalAngle * 0.5);
-    auto projectionMatrix = osg::Matrixf::perspective(
-        osg::RadiansToDegrees(maxVerticalAngle),
-        aspect_ratio, 0.1, 1000);
-
-    osg::ref_ptr<osg::Uniform> projectionMatrixUniform(new osg::Uniform("projectionMatrix", projectionMatrix));
+    osg::ref_ptr<osg::Uniform> projectionMatrixUniform(new osg::Uniform("projectionMatrix",
+                getProjectionMatrixFromFOV(maxHorizontalAngle, maxVerticalAngle)));
     ss->addUniform(projectionMatrixUniform);
 
     return localRoot;

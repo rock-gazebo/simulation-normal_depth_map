@@ -94,6 +94,9 @@ public:
      */
     void setFOV(double horizontal, double vertical);
 
+    /** Returns the projection matrix that matches a given field of view */
+    static osg::Matrixf getProjectionMatrixFromFOV(double horizontal, double vertical);
+
     void setViewMatrix(const osg::Vec3d &eye, const osg::Vec3d &center, const osg::Vec3d &up) {
         setViewMatrix(osg::Matrixf::lookAt(eye, center, up));
     }
